@@ -314,3 +314,94 @@ def test_deleted_deal_is_no_longer_returned(client: TestClient) -> None:
 
     assert delete_response.status_code == 204
     assert get_response.status_code == 404
+
+
+def test_deal_stats_with_no_deals(client: TestClient) -> None:
+    response = client.get("/deals/stats")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "total": 0,
+        "lead": 0,
+        "qualified": 0,
+        "proposal": 0,
+        "won": 0,
+        "lost": 0,
+        "total_value": 0,
+        "won_value": 0,
+        "open_value": 0,
+    }
+
+
+def test_deal_stats_with_mixed_stages(client: TestClient) -> None:
+    customer = create_customer(client)
+    create_deal(client, customer_id=customer["id"], stage="lead")
+    create_deal(client, customer_id=customer["id"], stage="qualified")
+    create_deal(client, customer_id=customer["id"], stage="proposal")
+    create_deal(client, customer_id=customer["id"], stage="won")
+    create_deal(client, customer_id=customer["id"], stage="lost")
+
+    response = client.get("/deals/stats")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 5
+    assert data["lead"] == 1
+    assert data["qualified"] == 1
+    assert data["proposal"] == 1
+    assert data["won"] == 1
+    assert data["lost"] == 1
+
+
+def test_deal_stats_total_value_calculation(client: TestClient) -> None:
+    customer = create_customer(client)
+    create_deal(client, customer_id=customer["id"], value="100.25")
+    create_deal(client, customer_id=customer["id"], value="200.75")
+
+    response = client.get("/deals/stats")
+
+    assert response.status_code == 200
+    assert response.json()["total_value"] == 301
+
+
+def test_deal_stats_won_value_calculation(client: TestClient) -> None:
+    customer = create_customer(client)
+    create_deal(client, customer_id=customer["id"], value="100.00", stage="won")
+    create_deal(client, customer_id=customer["id"], value="200.00", stage="lead")
+    create_deal(client, customer_id=customer["id"], value="300.00", stage="won")
+
+    response = client.get("/deals/stats")
+
+    assert response.status_code == 200
+    assert response.json()["won_value"] == 400
+
+
+def test_deal_stats_open_value_calculation(client: TestClient) -> None:
+    customer = create_customer(client)
+    create_deal(client, customer_id=customer["id"], value="100.00", stage="lead")
+    create_deal(client, customer_id=customer["id"], value="200.00", stage="qualified")
+    create_deal(client, customer_id=customer["id"], value="300.00", stage="proposal")
+    create_deal(client, customer_id=customer["id"], value="400.00", stage="won")
+    create_deal(client, customer_id=customer["id"], value="500.00", stage="lost")
+
+    response = client.get("/deals/stats")
+
+    assert response.status_code == 200
+    assert response.json()["open_value"] == 600
+
+
+def test_deal_stats_update_after_deleting_deal(client: TestClient) -> None:
+    customer = create_customer(client)
+    deleted_deal = create_deal(client, customer_id=customer["id"], stage="won")
+    create_deal(client, customer_id=customer["id"], stage="lead")
+
+    delete_response = client.delete(f"/deals/{deleted_deal['id']}")
+    stats_response = client.get("/deals/stats")
+
+    assert delete_response.status_code == 204
+    assert stats_response.status_code == 200
+    data = stats_response.json()
+    assert data["total"] == 1
+    assert data["won"] == 0
+    assert data["lead"] == 1
+    assert data["won_value"] == 0

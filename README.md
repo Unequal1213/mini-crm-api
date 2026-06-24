@@ -14,6 +14,7 @@ FastAPI backend service for managing customers, deals, sales pipeline stages, an
 - `GET /deals/{deal_id}` returns one deal.
 - `PATCH /deals/{deal_id}` updates provided deal fields.
 - `DELETE /deals/{deal_id}` deletes a deal.
+- `GET /deals/stats` returns CRM sales pipeline statistics.
 
 `GET /deals` supports pagination, filtering, and sorting with `limit`,
 `offset`, `stage`, `customer_id`, `source`, `min_value`, `max_value`,

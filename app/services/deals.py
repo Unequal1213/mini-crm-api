@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.models import Customer, Deal
 from app.schemas.deal import DealCreate, DealSortBy, DealStage, DealUpdate, SortOrder
 
+OPEN_STAGES = {"lead", "qualified", "proposal"}
+
 
 def create_deal(db: Session, deal_data: DealCreate) -> Deal | None:
     customer = db.get(Customer, deal_data.customer_id)
@@ -58,6 +60,40 @@ def list_deals(
 
 def get_deal(db: Session, deal_id: int) -> Deal | None:
     return db.get(Deal, deal_id)
+
+
+def get_deal_stats(db: Session) -> dict[str, int | float]:
+    deals = db.scalars(select(Deal)).all()
+    stats: dict[str, int | float] = {
+        "total": 0,
+        "lead": 0,
+        "qualified": 0,
+        "proposal": 0,
+        "won": 0,
+        "lost": 0,
+        "total_value": 0,
+        "won_value": 0,
+        "open_value": 0,
+    }
+
+    total_value = Decimal("0")
+    won_value = Decimal("0")
+    open_value = Decimal("0")
+
+    for deal in deals:
+        stats["total"] += 1
+        stats[deal.stage] += 1
+        total_value += deal.value
+
+        if deal.stage == "won":
+            won_value += deal.value
+        if deal.stage in OPEN_STAGES:
+            open_value += deal.value
+
+    stats["total_value"] = float(total_value)
+    stats["won_value"] = float(won_value)
+    stats["open_value"] = float(open_value)
+    return stats
 
 
 def update_deal(

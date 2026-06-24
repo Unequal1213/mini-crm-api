@@ -50,3 +50,15 @@ class DealResponse(BaseModel):
     expected_close_date: date | None
     created_at: datetime
     updated_at: datetime
+
+
+class DealStatsResponse(BaseModel):
+    total: int
+    lead: int
+    qualified: int
+    proposal: int
+    won: int
+    lost: int
+    total_value: float
+    won_value: float
+    open_value: float

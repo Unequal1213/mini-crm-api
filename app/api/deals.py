@@ -10,6 +10,7 @@ from app.schemas.deal import (
     DealResponse,
     DealSortBy,
     DealStage,
+    DealStatsResponse,
     DealUpdate,
     SortOrder,
 )
@@ -59,6 +60,11 @@ def list_deals(
         sort_by=sort_by,
         sort_order=sort_order,
     )
+
+
+@router.get("/stats", response_model=DealStatsResponse)
+def get_deal_stats(db: DbSession) -> DealStatsResponse:
+    return deal_service.get_deal_stats(db)
 
 
 @router.get("/{deal_id}", response_model=DealResponse)
