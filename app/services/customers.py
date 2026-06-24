@@ -7,7 +7,6 @@ from app.schemas.customer import CustomerCreate, CustomerUpdate
 
 def create_customer(db: Session, customer_data: CustomerCreate) -> Customer:
     data = customer_data.model_dump()
-    data["email"] = data["email"] or ""
 
     customer = Customer(**data)
     db.add(customer)
@@ -31,8 +30,6 @@ def update_customer(
     customer_data: CustomerUpdate,
 ) -> Customer:
     data = customer_data.model_dump(exclude_unset=True)
-    if data.get("email") is None and "email" in data:
-        data["email"] = ""
 
     for field, value in data.items():
         setattr(customer, field, value)

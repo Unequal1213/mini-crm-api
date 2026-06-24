@@ -22,7 +22,7 @@ def upgrade() -> None:
         "customers",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("email", sa.String(length=255), nullable=False),
+        sa.Column("email", sa.String(length=255), nullable=True),
         sa.Column("phone", sa.String(length=50), nullable=True),
         sa.Column("company", sa.String(length=255), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),

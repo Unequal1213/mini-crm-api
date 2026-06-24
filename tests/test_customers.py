@@ -131,8 +131,12 @@ def test_deleted_customer_is_no_longer_returned(client: TestClient) -> None:
     assert get_response.status_code == 404
 
 
-def test_customer_can_be_created_without_email(client: TestClient) -> None:
+def test_customer_can_be_created_without_optional_fields(client: TestClient) -> None:
     response = client.post("/customers", json={"name": "No Email"})
 
     assert response.status_code == 201
-    assert response.json()["email"] == ""
+    data = response.json()
+    assert data["email"] is None
+    assert data["phone"] is None
+    assert data["company"] is None
+    assert data["notes"] is None
