@@ -21,6 +21,21 @@ filtering, sorting, testing, Docker, and GitHub Actions CI.
 - Ruff linting.
 - GitHub Actions CI for every push and pull request.
 
+## Screenshots
+
+Swagger UI overview showing the available health, customer, deal, and statistics
+endpoints.
+
+![Swagger API overview](docs/images/swagger-overview.png)
+
+Example request body for creating a deal linked to an existing customer.
+
+![Create deal example in Swagger](docs/images/create-deal-example.png)
+
+Sales pipeline statistics endpoint returning counts and deal values by stage.
+
+![Deal statistics example in Swagger](docs/images/deal-stats-example.png)
+
 ## Tech Stack
 
 - Python 3.13
