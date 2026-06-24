@@ -9,6 +9,11 @@ FastAPI backend service for managing customers, deals, sales pipeline stages, an
 - `GET /customers/{customer_id}` returns one customer.
 - `PATCH /customers/{customer_id}` updates provided customer fields.
 - `DELETE /customers/{customer_id}` deletes a customer.
+- `POST /deals` creates a deal linked to a customer.
+- `GET /deals` lists deals.
+- `GET /deals/{deal_id}` returns one deal.
+- `PATCH /deals/{deal_id}` updates provided deal fields.
+- `DELETE /deals/{deal_id}` deletes a deal.
 
 ## Run with Docker
 
