@@ -1,8 +1,10 @@
+from decimal import Decimal
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Customer, Deal
-from app.schemas.deal import DealCreate, DealUpdate
+from app.schemas.deal import DealCreate, DealSortBy, DealStage, DealUpdate, SortOrder
 
 
 def create_deal(db: Session, deal_data: DealCreate) -> Deal | None:
@@ -17,8 +19,40 @@ def create_deal(db: Session, deal_data: DealCreate) -> Deal | None:
     return deal
 
 
-def list_deals(db: Session) -> list[Deal]:
-    result = db.scalars(select(Deal).order_by(Deal.id))
+def list_deals(
+    db: Session,
+    *,
+    limit: int = 20,
+    offset: int = 0,
+    stage: DealStage | None = None,
+    customer_id: int | None = None,
+    source: str | None = None,
+    min_value: Decimal | None = None,
+    max_value: Decimal | None = None,
+    sort_by: DealSortBy = "created_at",
+    sort_order: SortOrder = "desc",
+) -> list[Deal]:
+    statement = select(Deal)
+
+    if stage is not None:
+        statement = statement.where(Deal.stage == stage)
+    if customer_id is not None:
+        statement = statement.where(Deal.customer_id == customer_id)
+    if source is not None:
+        statement = statement.where(Deal.source == source)
+    if min_value is not None:
+        statement = statement.where(Deal.value >= min_value)
+    if max_value is not None:
+        statement = statement.where(Deal.value <= max_value)
+
+    sort_column = getattr(Deal, sort_by)
+    sort_expression = sort_column.asc() if sort_order == "asc" else sort_column.desc()
+    id_tiebreaker = Deal.id.asc() if sort_order == "asc" else Deal.id.desc()
+    statement = statement.order_by(sort_expression, id_tiebreaker).offset(offset).limit(
+        limit,
+    )
+
+    result = db.scalars(statement)
     return list(result.all())
 
 

@@ -5,6 +5,16 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 DealStage = Literal["lead", "qualified", "proposal", "won", "lost"]
+DealSortBy = Literal[
+    "expected_close_date",
+    "created_at",
+    "updated_at",
+    "value",
+    "title",
+    "stage",
+    "source",
+]
+SortOrder = Literal["asc", "desc"]
 
 
 class DealCreate(BaseModel):

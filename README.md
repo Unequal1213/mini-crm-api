@@ -15,6 +15,10 @@ FastAPI backend service for managing customers, deals, sales pipeline stages, an
 - `PATCH /deals/{deal_id}` updates provided deal fields.
 - `DELETE /deals/{deal_id}` deletes a deal.
 
+`GET /deals` supports pagination, filtering, and sorting with `limit`,
+`offset`, `stage`, `customer_id`, `source`, `min_value`, `max_value`,
+`sort_by`, and `sort_order` query parameters.
+
 ## Run with Docker
 
 Create a local environment file from the example:

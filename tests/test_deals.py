@@ -12,17 +12,21 @@ def create_deal(
     client: TestClient,
     customer_id: int,
     title: str = "Website redesign",
+    value: str = "1500.50",
+    stage: str = "lead",
+    source: str = "referral",
+    expected_close_date: str = "2026-07-15",
 ) -> dict[str, object]:
     response = client.post(
         "/deals",
         json={
             "customer_id": customer_id,
             "title": title,
-            "value": "1500.50",
-            "stage": "lead",
-            "source": "referral",
+            "value": value,
+            "stage": stage,
+            "source": source,
             "notes": "Initial discovery call booked",
-            "expected_close_date": "2026-07-15",
+            "expected_close_date": expected_close_date,
         },
     )
 
@@ -106,7 +110,152 @@ def test_list_deals(client: TestClient) -> None:
     response = client.get("/deals")
 
     assert response.status_code == 200
+    assert response.json() == [second_deal, first_deal]
+
+
+def test_list_deals_limit_and_offset(client: TestClient) -> None:
+    customer = create_customer(client)
+    create_deal(client, customer_id=customer["id"], title="First")
+    expected_deal = create_deal(client, customer_id=customer["id"], title="Second")
+    create_deal(client, customer_id=customer["id"], title="Third")
+
+    response = client.get("/deals?limit=1&offset=1")
+
+    assert response.status_code == 200
+    assert response.json() == [expected_deal]
+
+
+def test_list_deals_filter_by_stage(client: TestClient) -> None:
+    customer = create_customer(client)
+    expected_deal = create_deal(
+        client,
+        customer_id=customer["id"],
+        title="Proposal deal",
+        stage="proposal",
+    )
+    create_deal(client, customer_id=customer["id"], title="Lead deal", stage="lead")
+
+    response = client.get("/deals?stage=proposal")
+
+    assert response.status_code == 200
+    assert response.json() == [expected_deal]
+
+
+def test_list_deals_filter_by_customer_id(client: TestClient) -> None:
+    first_customer = create_customer(client)
+    second_customer = create_customer(client)
+    create_deal(client, customer_id=first_customer["id"], title="First customer deal")
+    expected_deal = create_deal(
+        client,
+        customer_id=second_customer["id"],
+        title="Second customer deal",
+    )
+
+    response = client.get(f"/deals?customer_id={second_customer['id']}")
+
+    assert response.status_code == 200
+    assert response.json() == [expected_deal]
+
+
+def test_list_deals_filter_by_source(client: TestClient) -> None:
+    customer = create_customer(client)
+    expected_deal = create_deal(
+        client,
+        customer_id=customer["id"],
+        title="Website deal",
+        source="website",
+    )
+    create_deal(client, customer_id=customer["id"], title="Referral deal")
+
+    response = client.get("/deals?source=website")
+
+    assert response.status_code == 200
+    assert response.json() == [expected_deal]
+
+
+def test_list_deals_filter_by_min_value(client: TestClient) -> None:
+    customer = create_customer(client)
+    expected_deal = create_deal(
+        client,
+        customer_id=customer["id"],
+        title="Large deal",
+        value="2500.00",
+    )
+    create_deal(client, customer_id=customer["id"], title="Small deal", value="500.00")
+
+    response = client.get("/deals?min_value=1000")
+
+    assert response.status_code == 200
+    assert response.json() == [expected_deal]
+
+
+def test_list_deals_filter_by_max_value(client: TestClient) -> None:
+    customer = create_customer(client)
+    create_deal(client, customer_id=customer["id"], title="Large deal", value="2500.00")
+    expected_deal = create_deal(
+        client,
+        customer_id=customer["id"],
+        title="Small deal",
+        value="500.00",
+    )
+
+    response = client.get("/deals?max_value=1000")
+
+    assert response.status_code == 200
+    assert response.json() == [expected_deal]
+
+
+def test_list_deals_default_sorting_created_at_desc(client: TestClient) -> None:
+    customer = create_customer(client)
+    first_deal = create_deal(client, customer_id=customer["id"], title="First")
+    second_deal = create_deal(client, customer_id=customer["id"], title="Second")
+    third_deal = create_deal(client, customer_id=customer["id"], title="Third")
+
+    response = client.get("/deals")
+
+    assert response.status_code == 200
+    assert response.json() == [third_deal, second_deal, first_deal]
+
+
+def test_list_deals_ascending_sorting(client: TestClient) -> None:
+    customer = create_customer(client)
+    second_deal = create_deal(client, customer_id=customer["id"], title="Bravo")
+    first_deal = create_deal(client, customer_id=customer["id"], title="Alpha")
+
+    response = client.get("/deals?sort_by=title&sort_order=asc")
+
+    assert response.status_code == 200
     assert response.json() == [first_deal, second_deal]
+
+
+def test_list_deals_invalid_stage_returns_422(client: TestClient) -> None:
+    response = client.get("/deals?stage=archived")
+
+    assert response.status_code == 422
+
+
+def test_list_deals_invalid_sort_by_returns_422(client: TestClient) -> None:
+    response = client.get("/deals?sort_by=id")
+
+    assert response.status_code == 422
+
+
+def test_list_deals_invalid_sort_order_returns_422(client: TestClient) -> None:
+    response = client.get("/deals?sort_order=random")
+
+    assert response.status_code == 422
+
+
+def test_list_deals_negative_min_value_returns_422(client: TestClient) -> None:
+    response = client.get("/deals?min_value=-1")
+
+    assert response.status_code == 422
+
+
+def test_list_deals_negative_max_value_returns_422(client: TestClient) -> None:
+    response = client.get("/deals?max_value=-1")
+
+    assert response.status_code == 422
 
 
 def test_get_deal_by_id(client: TestClient) -> None:

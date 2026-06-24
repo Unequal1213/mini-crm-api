@@ -1,15 +1,26 @@
+from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
-from app.schemas.deal import DealCreate, DealResponse, DealUpdate
+from app.schemas.deal import (
+    DealCreate,
+    DealResponse,
+    DealSortBy,
+    DealStage,
+    DealUpdate,
+    SortOrder,
+)
 from app.services import deals as deal_service
 
 router = APIRouter(prefix="/deals", tags=["deals"])
 
 DbSession = Annotated[Session, Depends(get_db)]
+Limit = Annotated[int, Query(ge=1, le=100)]
+Offset = Annotated[int, Query(ge=0)]
+NonNegativeDecimal = Annotated[Decimal, Query(ge=0)]
 
 
 @router.post("", response_model=DealResponse, status_code=status.HTTP_201_CREATED)
@@ -24,8 +35,30 @@ def create_deal(deal_data: DealCreate, db: DbSession) -> DealResponse:
 
 
 @router.get("", response_model=list[DealResponse])
-def list_deals(db: DbSession) -> list[DealResponse]:
-    return deal_service.list_deals(db)
+def list_deals(
+    db: DbSession,
+    limit: Limit = 20,
+    offset: Offset = 0,
+    stage: DealStage | None = None,
+    customer_id: int | None = None,
+    source: str | None = None,
+    min_value: NonNegativeDecimal | None = None,
+    max_value: NonNegativeDecimal | None = None,
+    sort_by: DealSortBy = "created_at",
+    sort_order: SortOrder = "desc",
+) -> list[DealResponse]:
+    return deal_service.list_deals(
+        db,
+        limit=limit,
+        offset=offset,
+        stage=stage,
+        customer_id=customer_id,
+        source=source,
+        min_value=min_value,
+        max_value=max_value,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
 
 
 @router.get("/{deal_id}", response_model=DealResponse)
